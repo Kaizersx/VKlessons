@@ -1,36 +1,59 @@
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.*;
 
 public class Main {
 
-    public static void main(String[] args) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+    public static void main(String[] args) {
 
 
-        /*класс который описывает другой класса, из этого объекта можно получить данные другого класса*/
-        Class<Student> studentClass = Student.class;
 
-        System.out.println(studentClass.getCanonicalName()); // получение имени класса
-
-        Field[] declaredFields = studentClass.getDeclaredFields(); //получаем поля класса
-
-        for (Field declaredField: declaredFields){
-            System.out.println(" Fileds: " + declaredField);
-
-        }
+        Connection connection=null;
+        PreparedStatement preparedStatement=null;
+        ResultSet resultSet=null;
 
 
-        Object student = studentClass.newInstance();
-        /*В случае если изветсно только имя метода */
-        Method method = studentClass.getMethod("setName", String.class); // описание метода
+            try {
 
-        Object res = method.invoke(student, "Jango");//метод Invoke возвращает Object
+            /*имя класса драйвера . Чтобы виртуальная машина знала какие классы загружать.
+        Класс с которым программа будет работать с БД*/
 
-        Student std= (Student) student;
+                Class.forName("org.postgresql.Driver");
+                connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres", "postgres", "munchen1987");
 
-        System.out.println(std.getName());
+                preparedStatement = connection.prepareStatement("SELECT id_std, name_std, last_name FROM students WHERE id_std=?");
+                preparedStatement.setInt(1, 1);
+                resultSet = preparedStatement.executeQuery();
 
+                while (resultSet.next()) {
 
+                    System.out.println("id: " + resultSet.getInt("id_std") +
+                            " \nName: " + resultSet.getString("name_std") +
+                            "\nlastname: " + resultSet.getString("last_name"));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+
+                try {
+                    if (resultSet != null) {
+                        resultSet.close();
+                    }
+
+                    if (connection != null) {
+                        connection.close();
+                    }
+
+                    if (preparedStatement != null) {
+                        preparedStatement.close();
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
 
     }
 }
